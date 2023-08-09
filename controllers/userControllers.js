@@ -1,6 +1,7 @@
 const db = require('../models')
 const user = db.User
 const role = db.Role
+const link = db.Token
 const { Op } = require("sequelize")
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
@@ -9,6 +10,7 @@ const fs = require('fs')
 const handlebars = require('handlebars')
 const transporter = require('../middleware/mail')
 const { error } = require('console')
+const token = require('../models/token')
 
 module.exports = {
     sendEmail: async (req, res) => {
@@ -56,6 +58,16 @@ module.exports = {
 
             const data = await user.findOne(
                 { where: { id: req.user.id } })
+            
+            const cektoken = await link.findOne(
+              {where:{
+                token:req.token
+              }}
+            )
+            if(cektoken){
+              throw {message:"Link Expired"}
+            }
+            await link.create({token:req.token})
 
             const salt = await bcrypt.genSalt(10)
             const hashPassword = await bcrypt.hash(password, salt)
